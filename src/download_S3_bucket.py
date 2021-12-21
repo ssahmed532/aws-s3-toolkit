@@ -1,3 +1,4 @@
+import argparse
 import boto3
 import os
 import sys
@@ -70,6 +71,16 @@ class S3FileDownloader:
         return self._download_all_files(self.bucket_name)
 
 
+    def download_all_files_into_dir(self, dir_path: str) -> int:
+        target_dir = os.path.join(dir_path, self.bucket_name)
+
+        # TODO:
+        #   if the target_dir already exists, then error out
+
+        print(f'Downloading all files into: {target_dir}')
+        return self._download_all_files(target_dir)
+
+
     def verify_hashes(self) -> bool:
         verified_count = 0
         failed_count = 0
@@ -84,16 +95,26 @@ class S3FileDownloader:
         return verified_count == len(self.hash_files)
 
 
-def main(s3_bucket_name: str) -> None:
-    file_downloader = S3FileDownloader(s3_bucket_name)
+def main(args: argparse.Namespace) -> None:
+    if args.verbose:
+        print(f'boto3 library version is {boto3.__version__}')
+        print(f'Current region is {s3_utils.get_current_region()}')
+        print()
+
+    print(f'Downloading all files from S3 bucket: {args.s3_bucket_name}')
+
+    file_downloader = S3FileDownloader(args.s3_bucket_name)
     try:
         file_downloader.initialize()
     except NonExistentS3BucketError as e:
-        print(f'ERROR: cannot download file(s) from non-existent S3 bucket ({s3_bucket_name})', file=sys.stderr)
+        print(f'ERROR: cannot download file(s) from non-existent S3 bucket ({args.s3_bucket_name})', file=sys.stderr)
         sys.exit(2)
 
     start = timer()
-    count = file_downloader.download_all_files()
+    if args.dir:
+        count = file_downloader.download_all_files_into_dir(args.dir)
+    else:
+        count = file_downloader.download_all_files()
     end = timer()
 
     elapsed_time = round(end - start, 3)
@@ -107,10 +128,32 @@ def main(s3_bucket_name: str) -> None:
 
 
 if __name__ == "__main__":
-    if (len(sys.argv) != 2):
-        print(f'Usage: {sys.argv[0]} <S3 bucket name>', file=sys.stderr)
-        sys.exit(1)
+    arg_parser = argparse.ArgumentParser(
+        description='Script to download files from an S3 Bucket')
 
-    bucket_name = sys.argv[1]
+    arg_parser.add_argument(
+        "-v",
+        "--verbose",
+        required=False,
+        action="store_true",
+        help="display verbose output"
+        )
 
-    main(bucket_name)
+    arg_parser.add_argument(
+        's3_bucket_name',
+        type=str,
+        help='name of the S3 Bucket'
+        )
+
+    arg_parser.add_argument(
+        '--dir',
+        action='store',
+        metavar='dir',
+        required=False,
+        type=str,
+        help='directory within which to download the file or S3 Bucket'
+        )
+
+    args = arg_parser.parse_args()
+
+    main(args)

@@ -13,13 +13,10 @@ from commons import NonExistentS3BucketError
 
 
 # TODO
-#   - integrate the argparse module
+#   - fix the issue when the current region (in config) is not the same
+#     as the region in which the S3 Bucket is located.
 #   - integrate the Python std logging module, and log all output to
 #     an ondisk logfile
-#   - by default, this script should download the contents of the bucket
-#     into a local dir with the same name as the S3 bucket
-#   - if a -d <download dir/path> option is specified, then the contents of the
-#     S3 bucket should be downloaded into that specified dir/path
 #   - modify this script such that the integrity hash files are an internal
 #     implementation detail and nothing about them is visible except for when
 #     file integrity verification fails
@@ -27,6 +24,11 @@ from commons import NonExistentS3BucketError
 #   - add a warning when trying to download an empty bucket
 #   - Intelligently calculate an average transfer rate
 #     (bytes downloaded / total transfer time) and display it at the end.
+#   - [DONE] integrate the argparse module
+#   - [DONE] by default, this script should download the contents of the
+#     bucket into a local dir with the same name as the S3 bucket
+#   - if a --dir <download dir/path> option is specified, then the contents
+#     of the S3 bucket should be downloaded into that specified dir/path
 #
 
 
@@ -51,6 +53,14 @@ class S3FileDownloader:
     def _download_all_files(self, dir_path: str) -> int:
         files_downloaded = 0
 
+        # TODO
+        # the ListObjects() API call requires the location-constraint for the
+        # S3 Bucket to be specified. For example:
+        #   current region is us-east-1
+        #   bucket whose contents are to be listed is in another region (me-south-1)
+        #
+        # Solution is to specify the exact same region in the call to ListObjects()
+        # as where the S3 Bucket actually resides
         bucket_files = s3_utils.get_bucket_contents(self.bucket_name)
 
         os.mkdir(dir_path)

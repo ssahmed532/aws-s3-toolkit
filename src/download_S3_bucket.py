@@ -53,6 +53,8 @@ class S3FileDownloader:
     def _download_all_files(self, dir_path: str) -> int:
         files_downloaded = 0
 
+        location = s3_utils.get_bucket_location(self.bucket_name)
+
         # TODO
         # the ListObjects() API call requires the location-constraint for the
         # S3 Bucket to be specified. For example:
@@ -61,7 +63,7 @@ class S3FileDownloader:
         #
         # Solution is to specify the exact same region in the call to ListObjects()
         # as where the S3 Bucket actually resides
-        bucket_files = s3_utils.get_bucket_contents(self.bucket_name)
+        bucket_files = s3_utils.get_bucket_contents(self.bucket_name, location)
 
         os.mkdir(dir_path)
 

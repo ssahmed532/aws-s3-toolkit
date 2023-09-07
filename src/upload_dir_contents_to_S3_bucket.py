@@ -76,6 +76,11 @@ class S3FileUploader:
         self.s3_resource.Bucket(self.bucket_name).upload_file(Filename=real_path, Key=filename)
 
         if calc_hash:
+            # TODO
+            #   - instead of uploading a separate .hash file for each data file
+            #     being uploaded, consider using the Object Metadata
+            #   - and store the computed hash in a custom Key-Value pair in this
+            #     Object Metadata
             hash_filepath = hash_utils.create_integrity_hash_file(file_path)
 
             self.s3_resource.Bucket(self.bucket_name).upload_file(Filename=real_path + ".hash", Key=filename + ".hash")
